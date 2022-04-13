@@ -4,6 +4,22 @@ const tours = JSON.parse(
     fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)
 )
 
+exports.checkBody = (req, res, next) => {
+    if(req.body.name == null){
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Name invalid'
+        })
+    }
+    if(req.body.price == null || !(Number.isInteger(req.body.price))){
+        return res.status(404).json({
+            status: 'fail',
+            message: 'Price invalid'
+        })
+    }
+    next()
+}
+
 exports.checkID = (req, res, next, val) => {
     console.log(`Tour id is: ${val}`)
     
