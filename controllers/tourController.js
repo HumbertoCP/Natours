@@ -5,14 +5,14 @@ const tours = JSON.parse(
 )
 
 exports.checkBody = (req, res, next) => {
-    if(req.body.name == null){
+    if(!req.body.name){
         return res.status(404).json({
             status: 'fail',
             message: 'Name invalid'
         })
     }
-    if(req.body.price == null || !(Number.isInteger(req.body.price))){
-        return res.status(404).json({
+    if(!req.body.price || !(Number.isInteger(req.body.price))){
+        return res.status(400).json({
             status: 'fail',
             message: 'Price invalid'
         })

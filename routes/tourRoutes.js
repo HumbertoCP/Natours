@@ -5,8 +5,7 @@ const router = express.Router()
 
 router.param('id', tourController.checkID)
 
-router.use(express.json());
-router.use(tourController.checkBody)
+//router.use(tourController.checkBody)
 
 router.route('/')
     .get(tourController.getAllTours)
