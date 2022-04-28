@@ -15,7 +15,7 @@ router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan)
 
 router.route('/:id')
     .get(tourController.getTour)
-    .patch(tourController.updateTour)
-    .delete(tourController.deleteTour)
+    .patch(authController.protect, authController.restrictTo('admin'),tourController.updateTour)
+    .delete(authController.protect, authController.restrictTo('admin'),tourController.deleteTour)
 
 module.exports = router
