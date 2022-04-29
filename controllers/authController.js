@@ -1,14 +1,28 @@
 const crypto = require('crypto')
+const bcrypt = require('bcryptjs')
 const { promisify } = require('util')
 const jwt = require('jsonwebtoken')
 const User = require('./../models/userModel')
 const catchAsync = require('./../utils/catchAsync')
 const AppError = require('./../utils/appError')
 const sendEmail = require('./../utils/email')
+const { findById, findOne } = require('./../models/userModel')
 
 const signToken = id => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRES_IN
+    })
+}
+
+const createSendToken = (user, statusCode, res) => {
+    const token = signToken(user._id)
+
+    res.status(statusCode).json({
+        status: 'success',
+        token,
+        data: {
+            user
+        }
     })
 }
 
@@ -21,15 +35,7 @@ exports.signup = catchAsync(async (req, res, next) => {
         passwordChangedAt: req.body.passwordChangedAt
     })
 
-    const token = signToken(newUser._id)
-
-    res.status(201).json({
-        status: 'success',
-        token,
-        data: {
-            user: newUser
-        }
-    })
+    createSendToken(newUser, 201, res)
 })
 
 exports.login = catchAsync(async (req, res, next) => {
@@ -49,13 +55,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
     //console.log(user)
     // 3) If everything ok, send token to client
-    const token = signToken(user._id)
-
-    res.status(200).json({
-        status: 'success',
-        token
-    })
-    console.log(token)
+    createSendToken(user, 200, res)
 })
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -164,10 +164,23 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
     await user.save()
 
     // 4) Log the user in, send JWT
-    const token = signToken(user._id)
+    createSendToken(user, 200, res)
+})
 
-    res.status(200).json({
-        status: 'success',
-        token
-    })
+exports.updatePassword = catchAsync(async (req, res, next) => {
+    // 1) Get user from collection
+    const user = await User.findById(req.user.id).select('+password')
+    
+    // 2) Check if Posted current password is correct
+    if(!user ||  !await user.correctPassword(req.body.currentPassword, user.password)){
+        return next(new AppError('The current password is incorrect.', 401))
+    }
+
+    // 3) If, so, update password
+    user.password = req.body.newPassword
+    user.passwordConfirm = req.body.newPasswordConfirm
+    await user.save()
+
+    // 4) Log user in, sent JWT
+    createSendToken(user, 200, res)
 })
